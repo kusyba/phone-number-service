@@ -1,7 +1,9 @@
 version: "2"
 sql:
   - engine: "postgresql"
-    queries: "internal/database/queries.sql"
+    queries:
+      - "internal/database/queries.sql"
+      - "internal/database/groups_queries.sql"
     schema: "migrations/"
     gen:
       go:

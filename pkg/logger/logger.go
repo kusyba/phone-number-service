@@ -3,6 +3,7 @@ package logger
 import (
     "log"
     "os"
+    "sync"
 )
 
 type Logger struct {
@@ -12,15 +13,20 @@ type Logger struct {
     level string
 }
 
-var Global *Logger
+var (
+    Global *Logger
+    once   sync.Once
+)
 
 func InitLogger(level string) {
-    Global = &Logger{
-        info:  log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile),
-        error: log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile),
-        debug: log.New(os.Stdout, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile),
-        level: level,
-    }
+    once.Do(func() {
+        Global = &Logger{
+            info:  log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile),
+            error: log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile),
+            debug: log.New(os.Stdout, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile),
+            level: level,
+        }
+    })
 }
 
 func (l *Logger) Info(v ...interface{}) {
@@ -53,5 +59,59 @@ func (l *Logger) Debugf(format string, v ...interface{}) {
 
 func (l *Logger) Fatal(v ...interface{}) {
     l.error.Println(v...)
+    os.Exit(1)
+}
+
+// Пакетные функции для удобства
+func Info(v ...interface{}) {
+    if Global != nil {
+        Global.info.Println(v...)
+    } else {
+        log.Println(v...)
+    }
+}
+
+func Error(v ...interface{}) {
+    if Global != nil {
+        Global.error.Println(v...)
+    } else {
+        log.Println(v...)
+    }
+}
+
+func Debug(v ...interface{}) {
+    if Global != nil && Global.level == "debug" {
+        Global.debug.Println(v...)
+    }
+}
+
+func Infof(format string, v ...interface{}) {
+    if Global != nil {
+        Global.info.Printf(format, v...)
+    } else {
+        log.Printf(format, v...)
+    }
+}
+
+func Errorf(format string, v ...interface{}) {
+    if Global != nil {
+        Global.error.Printf(format, v...)
+    } else {
+        log.Printf(format, v...)
+    }
+}
+
+func Debugf(format string, v ...interface{}) {
+    if Global != nil && Global.level == "debug" {
+        Global.debug.Printf(format, v...)
+    }
+}
+
+func Fatal(v ...interface{}) {
+    if Global != nil {
+        Global.error.Println(v...)
+    } else {
+        log.Println(v...)
+    }
     os.Exit(1)
 }
